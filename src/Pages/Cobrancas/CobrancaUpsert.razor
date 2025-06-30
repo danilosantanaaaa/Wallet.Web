@@ -1,0 +1,139 @@
+@page "/cobrancas/new"
+@page "/cobrancas/update/{id:guid}"
+
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject CarteiraService CarteiraService
+@inject CategoriaService CategoriaService
+@inject ContatoService ContatoService
+@inject CobrancaService CobrancaService
+
+<FormLayoutComponent PageTitle="Cobrança" IndexLink="./cobrancas">
+
+    @if (IsLoading())
+    {
+        <Spinner />
+    }
+    else
+    {
+        <EditForm Model="_model" OnValidSubmit="OnSubmitAsync">
+            <DataAnnotationsValidator />
+
+            <MudStack>
+                <MudTextField Label="Descrição" @bind-Value="_model!.Descricao" For="@(() => _model.Descricao)" />
+                <MudNumericField Immediate="false" Label="Valor" Format="N2" Culture="@pt_BR" T="decimal"
+                    @bind-Value="_model.Valor" />
+
+                <MudSelect Label="Carteira" @bind-Value="_model.CarteiraId">
+                    <MudSelectItem Value="Guid.Empty">--Selecionar ---</MudSelectItem>
+                    @foreach (var carteira in _carteiraResult.Value)
+                    {
+                        <MudSelectItem Value="carteira.Id">@carteira.Nome</MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudSelect Label="Categoria" @bind-Value="_model.CategoriaId">
+                    <MudSelectItem Value="Guid.Empty">--Selecionar ---</MudSelectItem>
+                    @foreach (var categoria in _categoriaResult.Value)
+                    {
+                        <MudSelectItem Value="categoria.Id">@categoria.Nome</MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudSelect Label="Contato" @bind-Value="_model.ContatoId">
+                    <MudSelectItem Value="Guid.Empty">--Selecionar ---</MudSelectItem>
+                    @foreach (var contato in _contatoResult.Value)
+                    {
+                        <MudSelectItem Value="contato.Id">@contato.Nome</MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudSelect Label="Status" @bind-Value="_model.Status">
+                    @foreach (var status in GetStatus())
+                    {
+                        <MudSelectItem Value="status">@status</MudSelectItem>
+                    }
+                </MudSelect>
+
+            </MudStack>
+            <MudStack Class="mt-2" Row="false" Justify="Justify.FlexEnd" AlignItems="AlignItems.End">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit"
+                    StartIcon="@Icons.Material.Filled.Save">
+                    Salvar</MudButton>
+            </MudStack>
+        </EditForm>
+    }
+</FormLayoutComponent>
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private Result<Cobranca?> _cobranca = default!;
+
+    private Cobranca _model => _cobranca?.Value!;
+
+    private Result<IEnumerable<Carteira>> _carteiraResult = default!;
+    private Result<IEnumerable<Contato>> _contatoResult = default!;
+    private Result<IEnumerable<Categoria>> _categoriaResult = default!;
+    private CultureInfo pt_BR = CultureInfo.GetCultureInfo("pt-BR");
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadModelAsync();
+
+        _carteiraResult = await CarteiraService.GetAllAsync<Carteira>();
+        _categoriaResult = await CategoriaService.GetAllAsync<Categoria>();
+        _contatoResult = await ContatoService.GetAllAsync<Contato>();
+    }
+
+    private async Task LoadModelAsync()
+    {
+        _cobranca = Id.IsNew()
+        ? new Cobranca()
+        : await CobrancaService.GetByIdAsync<Cobranca>(Id);
+    }
+
+    private async Task OnSubmitAsync()
+    {
+        try
+        {
+            var result = Id.IsNew()
+            ? await CobrancaService.CreateAsync(_model)
+            : await CobrancaService.UpdateAsync(Id, _model);
+
+            if (result.IsError)
+            {
+                throw new Exception(result.FirstError?.Description);
+            }
+
+            Id = result.Value;
+
+            await LoadModelAsync();
+
+            Snackbar.Add("Salvo com sucesso", Severity.Success);
+
+            NavigationManager.NavigateTo($"./cobrancas/update/{Id}");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private bool IsLoading()
+    {
+        return
+        _cobranca is null ||
+        _carteiraResult is null ||
+        _categoriaResult is null ||
+        _contatoResult is null;
+    }
+
+    private List<CobrancaStatus> GetStatus()
+    {
+        return Enum.GetValues<CobrancaStatus>()
+        .ToList();
+    }
+}

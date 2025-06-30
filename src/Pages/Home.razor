@@ -1,0 +1,65 @@
+﻿@page "/"
+
+@inject CobrancaService CobrancaService
+
+
+<IndexLayoutComponent PageTitle="Dashboard">
+    @if(_cobrancaReportResult is null)
+    {
+        <Spinner />
+    }
+    else if (_cobrancaReportResult.IsError)
+    {
+        <ShowProblemDestails Result="_cobrancaReportResult" />
+    }
+    else if(!HasDatas())
+    {
+        <MudAlert Severity="Severity.Warning">Nenhuma informação a ser mostrada.</MudAlert>
+    }
+    else {
+        <MudPaper Class="p-3" MaxWidth="100%">
+            <MudStack Row="true" Class="mt-2" Justify="Justify.SpaceBetween">
+                @if(CobrancaReport!.CobrancaByTipo.Any()) {
+                    <BalanceCard Label="Saldo Total" Total="GetSaldoTotal()"/>
+
+                    @foreach(var tipo in CobrancaReport!.CobrancaByTipo)
+                    {
+                        <BalanceCard  Label="@tipo.Tipo.ToString()" Total="tipo.Total"/>
+                    }
+                }
+            </MudStack>
+
+            <MudPaper Elevation="0">
+                <MudChart ChartType="ChartType.Pie" InputData="@GetDatasGroup()" InputLabels="@GetLlabelsGroup()" Width="100%" Height="500px" />
+            </MudPaper>
+        </MudPaper>
+    }
+</IndexLayoutComponent>
+
+@code {
+    private Result<CobrancaReport> _cobrancaReportResult = default!;
+    private CobrancaReport? CobrancaReport => _cobrancaReportResult.Value;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _cobrancaReportResult = await CobrancaService.GetReportAsync();
+    }
+
+    private decimal GetSaldoTotal()
+    {
+        return CobrancaReport?.CobrancaByTipo.Sum(x =>
+        {
+            return x.Tipo == CategoriaTipo.Entrada ? x.Total : x.Total * (-1);
+        }) ?? 0;
+    }
+
+    private double[] GetDatasGroup() =>
+        CobrancaReport?.CobrancaGroups.Select(x => (double)x.Valor_Total).ToArray() ?? [];
+
+    private string[] GetLlabelsGroup() =>
+        CobrancaReport?.CobrancaGroups.Select(x => x.CategoriaName).ToArray() ?? [];
+
+    private bool HasDatas() =>
+        (CobrancaReport?.CobrancaByTipo.Any() ?? false) ||
+        (CobrancaReport?.CobrancaGroups.Any() ?? false);
+}

@@ -1,0 +1,16 @@
+@typeparam T
+
+@if (Result.IsError)
+{
+    <MudAlert Severity="Severity.Warning">
+        @($"{Result.FirstError!.Code} - ") @(
+        string.IsNullOrEmpty(Result.FirstError.Description)
+        ? "Sem informação"
+        : Result.FirstError.Description)
+    </MudAlert>
+}
+
+@code {
+    [EditorRequired, Parameter]
+    public required Result<T> Result { get; set; }
+}

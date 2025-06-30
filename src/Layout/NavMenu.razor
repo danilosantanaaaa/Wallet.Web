@@ -1,0 +1,30 @@
+﻿<MudNavMenu>
+    <AuthorizeView>
+        <Authorized>
+            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">
+                Dashboard
+            </MudNavLink>
+
+            <MudNavLink Href="/carteiras" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Wallet">
+                Carteiras
+            </MudNavLink>
+
+            <MudNavLink Href="/categorias" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Category">
+                Categorias
+            </MudNavLink>
+
+            <MudNavLink Href="/contatos" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.People">
+                Contatos
+            </MudNavLink>
+
+            <MudNavLink Href="/cobrancas" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Receipt">
+                Cobranças
+            </MudNavLink>
+        </Authorized>
+        <NotAuthorized>
+            <MudNavLink Href="/cobrancas" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Login">
+                Login
+            </MudNavLink>
+        </NotAuthorized>
+    </AuthorizeView>
+</MudNavMenu>

@@ -1,0 +1,50 @@
+@page "/accounts/login"
+
+@inject UserService UserService
+@inject NavigationManager NavigationManager
+
+<EditForm Model="_model" OnValidSubmit="OnSubmit">
+    <DataAnnotationsValidator />
+
+    @if (_authenticationResult is not null && _authenticationResult.IsError)
+    {
+        <MudItem Class="mb-2">
+            <MudAlert Severity="Severity.Error">
+                @string.Join(", ", _authenticationResult.Errors.Select(e => e.Description))
+            </MudAlert>
+        </MudItem>
+    }
+    <MudItem>
+        <MudTextField T="string" InputType="InputType.Email" @bind-Value="_model.Email" For="() => _model.Email"
+            Label="E-mail" Required="true" />
+        <MudTextField T="string" InputType="InputType.Password" @bind-Value="_model.Password"
+            For="() => _model.Password" Label="Senha" Required="true" />
+    </MudItem>
+
+    <MudItem Class="mt-2">
+        <MudStack>
+            <MudButton StartIcon="@Icons.Material.Filled.Login" ButtonType="ButtonType.Submit" Variant="Variant.Filled"
+                Color="Color.Primary" Class="ml-auto w-100">
+                Entrar</MudButton>
+            <MudLink Href="./accounts/register">Criar uma conta</MudLink>
+        </MudStack>
+    </MudItem>
+</EditForm>
+
+@code {
+    private Result<AuthenticationResultModel> _authenticationResult = default!;
+    private LoginModel _model = new();
+
+    private async Task OnSubmit()
+    {
+        _authenticationResult = await UserService.LoginAsync(_model);
+
+        if (_authenticationResult.IsError)
+        {
+            return;
+        }
+
+        NavigationManager.NavigateTo("./");
+        StateHasChanged();
+    }
+}

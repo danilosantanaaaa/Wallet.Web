@@ -1,0 +1,49 @@
+@inject NavigationManager NavigationManager
+
+<PageTitle>@PageTitle</PageTitle>
+
+<MudContainer class="p-0 mt-2">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" Class="pb-2">
+
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            @if (!string.IsNullOrEmpty(IndexLink))
+            {
+                <MudIconButton Size="Size.Large" Icon="@Icons.Material.Filled.ArrowBack" aria-label="delete"
+                    OnClick="HandleIndexLink" />
+            }
+            <MudText Typo="Typo.h3">@PageTitle</MudText>
+        </MudStack>
+
+        @if (Status is not null)
+        {
+            <MudChip Variant="Variant.Outlined" T="string" Color="Status.Color" Size="Size.Large">
+                @Status.Label
+            </MudChip>
+        }
+    </MudStack>
+    <MudDivider DividerType="DividerType.FullWidth" />
+    <MudStack Class="pt-3">
+        @ChildContent
+    </MudStack>
+</MudContainer>
+
+@code {
+    [EditorRequired, Parameter]
+    public required string PageTitle { get; set; }
+
+    [EditorRequired, Parameter]
+    public required RenderFragment ChildContent { get; set; }
+
+    [Parameter]
+    public string? IndexLink { get; set; }
+
+    [Parameter]
+    public ModelStatus? Status { get; set; } = default!;
+
+    private void HandleIndexLink()
+    {
+        NavigationManager.NavigateTo(IndexLink!);
+    }
+
+    public record ModelStatus(string Label, Color Color);
+}

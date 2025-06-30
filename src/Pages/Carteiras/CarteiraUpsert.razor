@@ -1,0 +1,79 @@
+@page "/carteiras/new"
+@page "/carteiras/update/{id:guid}"
+
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject CarteiraService CarteiraService
+
+<FormLayoutComponent PageTitle="Carteira" IndexLink="./carteiras">
+
+    @if (_carteira is null)
+    {
+        <Spinner />
+    }
+    else
+    {
+        <EditForm Model="_model" OnValidSubmit="OnSubmitAsync">
+            <DataAnnotationsValidator />
+
+            <MudStack>
+                <MudTextField Label="Nome" @bind-Value="_model!.Nome" For="@(() => _model.Nome)" />
+                <MudTextField Label="Descrição" @bind-Value="_model!.Descricao" For="@(() => _model.Descricao)" />
+            </MudStack>
+            <MudStack Class="mt-2" Row="false" Justify="Justify.FlexEnd" AlignItems="AlignItems.End">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit"
+                    StartIcon="@Icons.Material.Filled.Save">
+                    Salvar</MudButton>
+            </MudStack>
+        </EditForm>
+    }
+</FormLayoutComponent>
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private Result<Carteira?> _carteira = default!;
+
+    private Carteira _model => _carteira?.Value!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadModelAsync();
+    }
+
+    private async Task LoadModelAsync()
+    {
+        _carteira = Id.IsNew()
+        ? new Carteira()
+        : await CarteiraService.GetByIdAsync<Carteira>(Id);
+    }
+
+    private async Task OnSubmitAsync()
+    {
+        try
+        {
+            var result = Id.IsNew()
+            ? await CarteiraService.CreateAsync(_model)
+            : await CarteiraService.UpdateAsync(Id, _model);
+
+            if (result.IsError)
+            {
+                throw new Exception(result.FirstError?.Description);
+            }
+
+            Id = result.Value;
+
+            await LoadModelAsync();
+
+            Snackbar.Add("Salvo com sucesso", Severity.Success);
+
+            NavigationManager.NavigateTo($"./carteiras/update/{Id}");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+}

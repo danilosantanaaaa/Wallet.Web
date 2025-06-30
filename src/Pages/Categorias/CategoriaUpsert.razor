@@ -1,0 +1,88 @@
+@page "/categorias/new"
+@page "/categorias/update/{id:guid}"
+
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject CategoriaService CategoriaService
+
+<FormLayoutComponent PageTitle="Categoria" IndexLink="./categorias">
+
+    @if (_result is null)
+    {
+        <Spinner />
+    }
+    else
+    {
+        <EditForm Model="_model" OnValidSubmit="OnSubmitAsync">
+            <DataAnnotationsValidator />
+
+            <MudStack>
+                <MudTextField Label="Nome" @bind-Value="_model!.Nome" For="@(() => _model.Nome)" />
+                <MudTextField Label="Descrição" @bind-Value="_model!.Descricao" For="@(() => _model.Descricao)" />
+                <MudSelect Label="Tipo" T="CategoriaTipo" @bind-Value="_model.Tipo">
+                    @foreach (var tipo in GetTipos())
+                    {
+                        <MudSelectItem Value="tipo">@tipo</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudStack>
+            <MudStack Class="mt-2" Row="false" Justify="Justify.FlexEnd" AlignItems="AlignItems.End">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit"
+                    StartIcon="@Icons.Material.Filled.Save">
+                    Salvar</MudButton>
+            </MudStack>
+        </EditForm>
+    }
+</FormLayoutComponent>
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private Result<Categoria?> _result = default!;
+
+    private Categoria _model => _result?.Value!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadModelAsync();
+    }
+
+    private async Task LoadModelAsync()
+    {
+        _result = Id.IsNew()
+        ? new Categoria()
+        : await CategoriaService.GetByIdAsync<Categoria>(Id);
+    }
+
+    private async Task OnSubmitAsync()
+    {
+        try
+        {
+            var result = Id.IsNew()
+            ? await CategoriaService.CreateAsync(_model)
+            : await CategoriaService.UpdateAsync(Id, _model);
+
+            if (result.IsError)
+            {
+                throw new Exception(result.FirstError?.Description);
+            }
+
+            Id = result.Value;
+
+            await LoadModelAsync();
+
+            Snackbar.Add("Salvo com sucesso", Severity.Success);
+
+            NavigationManager.NavigateTo($"./categorias/update/{Id}");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private List<CategoriaTipo> GetTipos() =>
+    Enum.GetValues<CategoriaTipo>().ToList();
+}

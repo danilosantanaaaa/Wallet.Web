@@ -1,0 +1,59 @@
+@page "/carteiras"
+
+@inject CarteiraService CarteiraService
+@inject NavigationManager NavigationManager
+
+<IndexLayoutComponent PageTitle="Carteiras" LinkAdd="./carteiras/new">
+
+    @if (_result is null)
+    {
+        <Spinner />
+    }
+    else if(_result.IsError)
+    {    
+        <ShowProblemDestails Result="_result" />
+    }
+    else
+    {
+        @if (!_result.Value.Any())
+        {
+            <MudAlert Severity="Severity.Warning">Nenhum dado cadastrado no momento.</MudAlert>
+        }
+        else
+        {
+            <MudTable T="Carteira" Items="@_result.Value" Hover="true" Breakpoint="Breakpoint.Sm" Loading="false"
+                LoadingProgressColor="Color.Info" OnRowClick="HandleRowClicked" RowClass="cursor-pointer" Class="w-100">
+                <ColGroup>
+                    <col style="width: 60px;" />
+                    <col />
+                    <col />
+                </ColGroup>
+                <HeaderContent>
+                    <MudTh>#</MudTh>
+                    <MudTh>Nome</MudTh>
+                    <MudTh>Descrição</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Id">@context!.Id.TruncateAsEllipsis()</MudTd>
+                    <MudTd DataLabel="Descrição">@context.Nome</MudTd>
+                    <MudTd DataLabel="Name">@context.Descricao</MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    }
+</IndexLayoutComponent>
+
+@code {
+    private Result<IEnumerable<Carteira>> _result = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _result = await CarteiraService.GetAllAsync<Carteira>();
+    }
+
+    void HandleRowClicked(TableRowClickEventArgs<Carteira> tableRowClickEventArgs)
+    {
+        Guid id = tableRowClickEventArgs.Item!.Id;
+        NavigationManager.NavigateTo($"./carteiras/update/{id}");
+    }   
+}

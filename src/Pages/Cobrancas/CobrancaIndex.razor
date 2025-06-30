@@ -1,0 +1,73 @@
+@page "/cobrancas"
+
+@inject CobrancaService CobrancaService
+@inject NavigationManager NavigationManager
+
+<IndexLayoutComponent PageTitle="Cobranças" LinkAdd="./cobrancas/new">
+
+    @if (_result is null)
+    {
+        <Spinner />
+    }
+    else if(_result.IsError)
+    {
+        <ShowProblemDestails Result="_result" />
+    }
+    else
+    {
+        @if (!_result.Value.Any())
+        {
+            <MudAlert Severity="Severity.Warning">Nenhum dado cadastrado no momento.</MudAlert>
+        }
+        else
+        {
+            <MudTable T="Cobranca" Items="@_result.Value" Hover="true" Breakpoint="Breakpoint.Sm" Loading="false"
+                LoadingProgressColor="Color.Info" OnRowClick="HandleRowClicked" RowClass="cursor-pointer">
+                <ColGroup>
+                    <col style="width: 60px;" />
+                    <col />
+                    <col />
+                </ColGroup>
+                <HeaderContent>
+                    <MudTh>#</MudTh>
+                    <MudTh>Descrição</MudTh>
+                    <MudTh>Valor</MudTh>
+                    <MudTh>Status</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Id">@context!.Id.TruncateAsEllipsis()</MudTd>
+                    <MudTd DataLabel="Descrição">@context.Descricao</MudTd>
+                    <MudTd DataLabel="Name">@context.Valor.ToString("C")</MudTd>
+                    <MudTd DataLabel="Name">
+                        <MudChip T="string" Style="@($"background: {GetStatusColor(context)}; color: white;")">@context.Status</MudChip>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    }
+</IndexLayoutComponent>
+
+@code {
+    private Result<IEnumerable<Cobranca>> _result = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _result = await CobrancaService.GetAllAsync<Cobranca>();
+    }
+
+    void HandleRowClicked(TableRowClickEventArgs<Cobranca> tableRowClickEventArgs)
+    {
+        Guid id = tableRowClickEventArgs.Item!.Id;
+        NavigationManager.NavigateTo($"./cobrancas/update/{id}");
+    }
+
+    string GetStatusColor(Cobranca cobranca) => cobranca.Status switch
+    {
+        CobrancaStatus.Finalizada => Colors.Blue.Default,
+        CobrancaStatus.Pendente => Colors.Orange.Default,
+        CobrancaStatus.Pago => Colors.Green.Default,
+        CobrancaStatus.Vencida => Colors.Red.Default,
+        _ => Colors.Gray.Default
+
+    };
+}

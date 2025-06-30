@@ -1,0 +1,70 @@
+@page "/categorias"
+
+@inject CategoriaService CategoriaService
+@inject NavigationManager NavigationManager
+
+<IndexLayoutComponent PageTitle="Categorias" LinkAdd="./categorias/new">
+
+    @if (_result is null)
+    {
+        <Spinner />
+    }
+    else if(_result.IsError)
+    {
+        <ShowProblemDestails Result="_result" />
+    }
+    else
+    {
+        @if (!_result.Value.Any())
+        {
+            <MudAlert Severity="Severity.Warning">Nenhum dado cadastrado no momento.</MudAlert>
+        }
+        else
+        {
+            <MudTable T="Categoria" Items="@_result.Value" Hover="true" Breakpoint="Breakpoint.Sm" Loading="false"
+                LoadingProgressColor="Color.Info" OnRowClick="HandleRowClicked" RowClass="cursor-pointer">
+                <ColGroup>
+                    <col style="width: 60px;" />
+                    <col />
+                    <col />
+                </ColGroup>
+                <HeaderContent>
+                    <MudTh>#</MudTh>
+                    <MudTh>Nome</MudTh>
+                    <MudTh>Descrição</MudTh>
+                    <MudTh>Tipo</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Id">@context!.Id.TruncateAsEllipsis()</MudTd>
+                    <MudTd DataLabel="Descrição">@context.Nome</MudTd>
+                    <MudTd DataLabel="Name">@context.Descricao</MudTd>
+                    <MudTd DataLabel="Name">
+                        @if (context.Tipo == CategoriaTipo.Entrada)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.ArrowUpward" />
+                        }else
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.ArrowDownward" />
+                        }
+                        @context.Tipo
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    }
+</IndexLayoutComponent>
+
+@code {
+    private Result<IEnumerable<Categoria>> _result = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _result = await CategoriaService.GetAllAsync<Categoria>();
+    }
+
+    void HandleRowClicked(TableRowClickEventArgs<Categoria> tableRowClickEventArgs)
+    {
+        Guid id = tableRowClickEventArgs.Item!.Id;
+        NavigationManager.NavigateTo($"./categorias/update/{id}");
+    }
+}

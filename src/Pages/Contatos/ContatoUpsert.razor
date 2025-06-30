@@ -1,0 +1,80 @@
+@page "/contatos/new"
+@page "/contatos/update/{id:guid}"
+
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject ContatoService ContatoService
+
+<FormLayoutComponent PageTitle="Carteira" IndexLink="./contatos">
+
+    @if (_result is null)
+    {
+        <Spinner />
+    }
+    else
+    {
+        <EditForm Model="_model" OnValidSubmit="OnSubmitAsync">
+            <DataAnnotationsValidator />
+
+            <MudStack>
+                <MudTextField Label="Nome" @bind-Value="_model!.Nome" For="@(() => _model.Nome)" />
+                <MudTextField Label="E-mail" @bind-Value="_model!.Email" For="@(() => _model.Email)" />
+                <MudTextField Label="Telefone" @bind-Value="_model!.Telefone" For="@(() => _model.Telefone)" />
+            </MudStack>
+            <MudStack Class="mt-2" Row="false" Justify="Justify.FlexEnd" AlignItems="AlignItems.End">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit"
+                    StartIcon="@Icons.Material.Filled.Save">
+                    Salvar</MudButton>
+            </MudStack>
+        </EditForm>
+    }
+</FormLayoutComponent>
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private Result<Contato?> _result = default!;
+
+    private Contato _model => _result?.Value!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadModelAsync();
+    }
+
+    private async Task LoadModelAsync()
+    {
+        _result = Id.IsNew()
+        ? new Contato()
+        : await ContatoService.GetByIdAsync<Contato>(Id);
+    }
+
+    private async Task OnSubmitAsync()
+    {
+        try
+        {
+            var result = Id.IsNew()
+            ? await ContatoService.CreateAsync(_model)
+            : await ContatoService.UpdateAsync(Id, _model);
+
+            if (result.IsError)
+            {
+                throw new Exception(result.FirstError?.Description);
+            }
+
+            Id = result.Value;
+
+            await LoadModelAsync();
+
+            Snackbar.Add("Salvo com sucesso", Severity.Success);
+
+            NavigationManager.NavigateTo($"./contatos/update/{Id}");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+}

@@ -1,0 +1,78 @@
+﻿@inherits LayoutComponentBase
+
+@inject UserService UserService
+@inject NavigationManager NavigationManager
+
+<MudThemeProvider IsDarkMode="true" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
+            OnClick="@((e) => DrawerToggle())" />
+        <MudSpacer />
+
+        <AuthorizeView Context="context">
+            <Authorized>
+                <MudTooltip Text="Opções" Arrow="true">
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+                        <MudMenuItem Label="@context.User.Identity!.Name" Icon="@Icons.Material.Filled.Person" />
+                        <MudMenuItem Label="Logout" OnClick="RevokeAsync" Icon="@Icons.Material.Filled.Logout" />
+                    </MudMenu>
+                </MudTooltip>
+            </Authorized>
+        </AuthorizeView>
+    </MudAppBar>
+
+    <MudBreakpointProvider OnBreakpointChanged="OnBreakpointChanged">
+        <MudDrawer ClipMode="DrawerClipMode.Always" @bind-Open="_drawerOpen" Elevation="1" Variant="_typeMenu"
+            OpenMiniOnHover="true" Breakpoint="Breakpoint.LgAndUp" Fixed="true">
+            <NavMenu />
+        </MudDrawer>
+    </MudBreakpointProvider>
+    <MudMainContent Class="p-0 m-0">
+        <MudContainer MaxWidth="_maxWidth" Class="@_class_container">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = false;
+
+    private DrawerVariant _typeMenu = DrawerVariant.Mini;
+    private MaxWidth _maxWidth = MaxWidth.ExtraLarge;
+    private string _class_container = "pt-16 px-16";
+
+    internal static object LoadingSection = new();
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private async Task RevokeAsync()
+    {
+        await UserService.RevokeAsync();
+
+        NavigationManager.NavigateTo("/accounts/login");
+        StateHasChanged();
+    }
+
+    private void OnBreakpointChanged(Breakpoint breakpoint)
+    {
+        _typeMenu = breakpoint < Breakpoint.Md
+            ? DrawerVariant.Responsive
+            : DrawerVariant.Mini;
+
+        _maxWidth = breakpoint < Breakpoint.Md
+            ? MaxWidth.False
+            : MaxWidth.ExtraLarge;
+
+        _class_container  = breakpoint < Breakpoint.Md
+            ? "pt-16"
+            : "pt-16 px-16";
+    }
+}
